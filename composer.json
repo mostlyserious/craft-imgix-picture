@@ -5,12 +5,30 @@
     "license": "proprietary",
     "require": {
         "php": ">=8.0.2",
-        "craftcms/cms": "^4.9.0"
+        "craftcms/cms": "^4.9.0||^5.0.0"
     },
     "require-dev": {
         "craftcms/ecs": "dev-main",
         "craftcms/phpstan": "dev-main"
     },
+    "keywords": [
+        "craft",
+        "craftcms",
+        "craft-plugin",
+        "imgix",
+        "picture"
+    ],
+    "support": {
+        "issues": "https://github.com/mostlyserious/craft-imgix-picture/issues",
+        "source": "https://github.com/mostlyserious/craft-imgix-picture",
+        "docs": "https://github.com/mostlyserious/craft-imgix-picture"
+    },
+    "authors": [
+        {
+            "name": "Mostly Serious",
+            "homepage": "https://github.com/mostlyserious"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "mostlyserious\\craftimgixpicture\\": "src/"

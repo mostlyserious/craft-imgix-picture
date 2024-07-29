@@ -15,13 +15,14 @@ use craft\events\ReplaceAssetEvent;
 use craft\base\Plugin as BasePlugin;
 use GuzzleHttp\Exception\ClientException;
 use mostlyserious\craftimgixpicture\models\Settings;
+use mostlyserious\craftimgixpicture\services\UrlService;
 use mostlyserious\craftimgixpicture\twigextensions\ImgixTwigExtension;
 
 /**
  * imgix Picture plugin
  *
- * @method static Plugin   getInstance()
- * @method        Settings getSettings()
+ * @method static Plugin getInstance()
+ * @method Settings getSettings()
  * @author Mostly Serious
  * @copyright Mostly Serious
  * @license https://craftcms.github.io/license/ Craft License
@@ -29,13 +30,18 @@ use mostlyserious\craftimgixpicture\twigextensions\ImgixTwigExtension;
 class Plugin extends BasePlugin
 {
     public string $schemaVersion = '1.0.0';
-    public bool $hasCpSettings = true;
+    public bool $hasCpSettings = false;
+
+    public string $imgixUrl = '';
+    public string $imgixApiKey = '';
 
     public static function config(): array
     {
         return [
             'components' => [
-                // Define component configs here...
+                'urlService' => [
+                    'class' => UrlService::class,
+                ]
             ],
         ];
     }
@@ -44,11 +50,14 @@ class Plugin extends BasePlugin
     {
         parent::init();
 
+        $this->imgixUrl = $this->setting->getImgixUrl();
+        $this->imgixApiKey = $this->setting->getImgixApiKey();
+
         /** Add the picture() Twig function */
         Craft::$app->view->registerTwigExtension(ImgixTwigExtension::instance());
 
-        /** Purge IMGIX at certain events */
-        if (App::env('IMGIX_API_KEY')) {
+        /** Purge IMGIX for certain Asset events */
+        if ($this->imgixApiKey !== '') {
             Event::on(
                 Elements::class,
                 Elements::EVENT_BEFORE_SAVE_ELEMENT,
@@ -97,7 +106,7 @@ class Plugin extends BasePlugin
     protected function purgeCache(Asset $asset): void
     {
         if ($asset->supportsImageEditor) {
-            $purgeUrl = str_replace(App::env('AWS_CLOUDFRONT_URL'), App::env('IMGIX_URL'), $asset->url);
+            $purgeUrl = $this->urlService->sourceUrl($asset);
             $guzzleClient = new Client();
 
             try {
@@ -119,8 +128,8 @@ class Plugin extends BasePlugin
                 $response = $e->getResponse();
                 $message = [
                     'Failed to purge IMGIX cache.',
-                    'Error Code: '.$e->getResponse()->getStatusCode(),
-                    'Reason: '.$response->getReasonPhrase(),
+                    'Error Code: ' . $e->getResponse()->getStatusCode(),
+                    'Reason: ' . $response->getReasonPhrase(),
                 ];
                 $message = implode(' ', $message);
 
