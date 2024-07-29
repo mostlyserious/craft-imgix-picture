@@ -95,14 +95,13 @@ class Plugin extends BasePlugin
         return Craft::createObject(Settings::class);
     }
 
-    protected function settingsHtml(): ?string
-    {
-        return Craft::$app->view->renderTemplate('imgix-picture/_settings.twig', [
-            'plugin' => $this,
-            'settings' => $this->getSettings(),
-        ]);
-    }
-
+    /**
+     * Purges the cache for a given asset.
+     *
+     * @param Asset $asset The asset to purge the cache for.
+     * @throws ClientException If the cache purge request fails.
+     * @return void
+     */
     protected function purgeCache(Asset $asset): void
     {
         if ($asset->supportsImageEditor) {
@@ -112,7 +111,7 @@ class Plugin extends BasePlugin
             try {
                 $guzzleClient->post('https://api.imgix.com/api/v1/purge', [
                     'headers' => [
-                        'Authorization' => sprintf('Bearer %s', App::env('IMGIX_API_KEY')),
+                        'Authorization' => sprintf('Bearer %s', $this->imgixApiKey),
                         'Content-Type' => 'application/vnd.api+json',
                     ],
                     'json' => [

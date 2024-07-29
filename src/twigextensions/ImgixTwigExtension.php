@@ -10,21 +10,12 @@ use craft\elements\Asset;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
 use Twig\Extension\AbstractExtension;
+use mostlyserious\craftimgixpicture\Plugin;
 
 class ImgixTwigExtension extends AbstractExtension
 {
     private static $instance;
-
-    /* @note: native field is 'alt', update this to use your custom handle if needed */
-    private $alt_text_handle = 'alternativeText';
     private $default_src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-    private $default_imgix_options = [
-        'auto' => 'format,compress',
-        'q' => 35,
-        'fit' => 'max'
-    ];
-    private $use_fallback = true;
-    private $fallback_src = 'static-assets/default-image-missing-photo.png';
 
     public static function instance()
     {
@@ -56,11 +47,9 @@ class ImgixTwigExtension extends AbstractExtension
      */
     public function downloadUrl(Asset $asset)
     {
-        $imgix_url = App::env('IMGIX_URL');
-        $base_url = App::env('AWS_CLOUDFRONT_URL') ?? Craft::$app->getSites()->getCurrentSite()->baseUrl;
-        $download_url = str_replace($base_url, $imgix_url, $asset->url);
+        $download_url = Plugin::getInstance()->urlService->sourceUrl($asset);
 
-        return $download_url.'?dl';
+        return $download_url . '?dl';
     }
 
     /**
@@ -73,17 +62,15 @@ class ImgixTwigExtension extends AbstractExtension
 
         return $attributes;
     }
-    
-    /**
-     * Prepare a picture element from an asset and a set of transforms.
-     */
-    public function picture(Asset|null $asset, array $transforms = [], array $img_attributes = [], Asset|string|null $fallback_image = null)
+
+    public function picture(Asset|null $asset, array $transforms = [], array $img_attributes = [])
     {
         if (!$asset || !($asset instanceof Asset)) {
-            if ($this->use_fallback) {
+            $fallback_src = Plugin::getInstance()->settings->getFallBackImageSrc();
+            if ($fallback_src) {
                 return Template::raw(Html::tag('img', '', array_merge(
                     [
-                        'src' => UrlHelper::url($this->fallback_src),
+                        'src' => UrlHelper::url($fallback_src),
                         'alt' => 'No Image Available',
                         'aria-hidden' => 'true'
                     ],
@@ -92,8 +79,8 @@ class ImgixTwigExtension extends AbstractExtension
             }
 
             return App::devMode()
-            ? 'Please provide an Asset object as the first argument.'
-            : '';
+                ? 'Please provide an Asset object as the first argument to the picture() Twig function.'
+                : '';
         }
 
         if (!$this->validateTransforms($transforms)) {
@@ -109,13 +96,14 @@ class ImgixTwigExtension extends AbstractExtension
 
         if (!in_array(strtolower($asset->extension), $supported_extensions)) {
             return App::devMode()
-                ? 'Images must have a valid extension: '.implode(', ', $supported_extensions)
+                ? 'Images must have a valid extension: ' . implode(', ', $supported_extensions)
                 : '';
         }
 
+        $alt_text_handle = Plugin::getInstance()->settings->altTextHandle;
         $default_img_attributes = [
             'loading' => 'lazy',
-            'alt' => $asset->{$this->alt_text_handle} ?? '',
+            'alt' => $asset->{$alt_text_handle} ?? '',
         ];
 
         if (
@@ -129,7 +117,7 @@ class ImgixTwigExtension extends AbstractExtension
          * SVG and GIF formats are never transformed.
          */
         if (
-            in_array($asset->extension, ['svg','gif'])
+            in_array($asset->extension, ['svg', 'gif'])
             || count($transforms) === 0
         ) {
             return Template::raw(Html::tag('img', '', array_merge(
@@ -164,13 +152,13 @@ class ImgixTwigExtension extends AbstractExtension
                 $img_attributes
             )));
         }
-        
+
         /**
          * Handle multiple transforms.
          */
         $picture_contents = '';
         $source_transforms = $this->sortByBreakpoint($transforms);
-        
+
         foreach ($source_transforms as $transform) {
             $picture_contents .= Html::tag('source', '', $this->buildAttributes($asset, $transform));
         }
@@ -179,7 +167,7 @@ class ImgixTwigExtension extends AbstractExtension
         if (!$fallback_transform) {
             $fallback_transform = $transforms[0];
         }
-    
+
         $final_img_attributes = array_merge(
             $default_img_attributes,
             $this->buildAttributes($asset, $fallback_transform),
@@ -190,7 +178,7 @@ class ImgixTwigExtension extends AbstractExtension
         );
 
         $picture_contents .= Html::tag('img', '', $final_img_attributes);
-    
+
         return Template::raw(Html::tag('picture', $picture_contents));
     }
 
@@ -201,11 +189,11 @@ class ImgixTwigExtension extends AbstractExtension
      * @param  Integer $max_px The max length in pixels of the longest side
      * @return array   The max dimensions
      */
-    public function calculateMaxDimensions(Asset $asset, int $max_px = 1200):array
+    public function calculateMaxDimensions(Asset $asset, int $max_px = 1200): array
     {
         $aspect_original = floor(($asset->width / $asset->height) * 1000) / 1000;
         $safe_width = $safe_height = 0;
-    
+
         if ($asset->width >= $max_px || $asset->height >= $max_px) {
             if ($asset->width > $asset->height) {
                 $safe_width = $max_px;
@@ -218,7 +206,7 @@ class ImgixTwigExtension extends AbstractExtension
             $safe_width = $asset->width;
             $safe_height = $asset->height;
         }
-    
+
         return ['width' => $safe_width, 'height' => $safe_height];
     }
 
@@ -272,7 +260,7 @@ class ImgixTwigExtension extends AbstractExtension
      * @param  array $transform an array of transform settings.
      * @return array The tag attributes with the transform applied.
      */
-    private function buildAttributes(Asset $asset, array $transform):array
+    private function buildAttributes(Asset $asset, array $transform): array
     {
         $breakpoint = isset($transform['breakpoint'])
             ? intval($transform['breakpoint'])
@@ -284,6 +272,8 @@ class ImgixTwigExtension extends AbstractExtension
         };
 
         if ($this->useNative()) {
+            /* @todo, don't allow any non-imgix params here */
+            unset($transform['fit']);
             $asset->setTransform($transform);
 
             return [
@@ -296,9 +286,6 @@ class ImgixTwigExtension extends AbstractExtension
             ];
         }
 
-        $imgix_url = App::env('IMGIX_URL');
-        $base_url = App::env('AWS_CLOUDFRONT_URL') ?? Craft::$app->getSites()->getCurrentSite()->baseUrl;
-        
         if (
             isset($transform['fit'], $transform['width'], $transform['height'])
             && $transform['fit'] === 'crop'
@@ -312,16 +299,24 @@ class ImgixTwigExtension extends AbstractExtension
                 : [
                     'crop' => 'faces,center'
                 ];
-            $transform = array_merge($this->default_imgix_options, $focal_point_defaults, $transform);
+            $default_imgix_options = Plugin::getInstance()->settings->defaultParameters;
+            if (count($default_imgix_options) === 0) {
+                $default_imgix_options = [
+                    'auto' => 'format,compress',
+                    'q' => 35,
+                    'fit' => 'max'
+                ];
+            }
+            $transform = array_merge($default_imgix_options, $focal_point_defaults, $transform);
         }
-    
+
         $transform_high_dpr = array_merge($transform, ['dpr' => 1.5]);
-        $url = str_replace($base_url, $imgix_url, $asset->url);
+        $url = Plugin::getInstance()->urlService->sourceUrl($asset);
 
         return [
             'srcset' => implode(', ', [
-                $url.'?'.http_build_query($transform).' 1x',
-                $url.'?'.http_build_query($transform_high_dpr).' 1.5x'
+                $url . '?' . http_build_query($transform) . ' 1x',
+                $url . '?' . http_build_query($transform_high_dpr) . ' 1.5x'
             ]),
             'media' => $breakpoint ? "(min-width: {$breakpoint}px)" : null,
             'width' => $dimensions['width'],
@@ -336,7 +331,7 @@ class ImgixTwigExtension extends AbstractExtension
      * @param  array $transform an array include at least one dimension
      * @return array An array containing the width and height of the transformed image, or null if no dimensions could be calculated.
      */
-    private function calculateDimensions(Asset $asset, array $transform):array
+    private function calculateDimensions(Asset $asset, array $transform): array
     {
         $original_width = $asset->width ?? 0;
         $original_height = $asset->height ?? 0;
@@ -367,14 +362,14 @@ class ImgixTwigExtension extends AbstractExtension
             'height' => null
         ];
     }
-    
+
     /**
      * Validates the provided transforms parameter is an array of arrays.
      *
      * @param  array $transforms The array of transforms to validate.
      * @return bool  true if the provided array is valid, false otherwise.
      */
-    private function validateTransforms(array $transforms):bool
+    private function validateTransforms(array $transforms): bool
     {
         return array_reduce($transforms, function ($carry, $item) {
             return $carry && is_array($item);
@@ -386,8 +381,10 @@ class ImgixTwigExtension extends AbstractExtension
      *
      * @return bool true if the required IMGIX config var does not exist
      */
-    private function useNative():bool
+    private function useNative(): bool
     {
-        return !App::env('IMGIX_URL');
+        $settings = Plugin::getInstance()->settings;
+
+        return $settings->useNativeTransforms || $settings->getImgixUrl() === '';
     }
 }

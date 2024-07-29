@@ -13,16 +13,20 @@ class Settings extends Model
 {
     public $imgixUrl = '';
     public $imgixApiKey = '';
-    public $defaultParameters = []; /* experimental */
-    public $useNativeTransforms = false; /* experimental */
-    public $fallBackImageSrc = ''; /* experimental */
+    public $altTextHandle = 'alt';
+    public $defaultParameters = [
+        'auto' => 'format,compress',
+        'q' => 35,
+        'fit' => 'max'
+    ];
+    public $useNativeTransforms = false;
+    public $fallBackImageSrc = '';
 
     public function defineRules(): array
     {
         return [
-            /* [['imgixUrl', 'imgixApiKey'], 'required'], */
             [['useNativeTransforms'], 'boolean'],
-            [['imgixUrl', 'imgixApiKey', 'fallBackImageSrc'], 'string'],
+            [['imgixUrl', 'imgixApiKey', 'fallBackImageSrc', 'altTextHandle'], 'string'],
         ];
     }
 

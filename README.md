@@ -27,7 +27,9 @@ composer require mostlyserious/craft-imgix-picture
 
 ## Configuration
 
-Create an [imgix account](https://dashboard.imgix.com/sign-up) with a source and an [API Key](https://docs.imgix.com/apis/management/overview).
+This plugin assumes that you have one Asset Volume and File System configured (Typically an Amazon S3 bucket) an an imgix source that references that File System. Note: multiple imgix sources are not supported at this time.
+
+To get started, create an [imgix account](https://dashboard.imgix.com/sign-up) with a source and an [API Key](https://docs.imgix.com/apis/management/overview).
 
 The API key requires `Purge` permissions, and it is used only to purge assets on Craft's Asset events, such as replace.
 
@@ -38,7 +40,7 @@ IMGIX_URL="https://example.imgix.net"
 IMGIX_API_KEY="aXzY....."
 ```
 
-Add this config file at `config/imgix-picture`:
+Add then add this config file at `config/imgix-picture`:
 
 ```php
 <?php
@@ -46,8 +48,24 @@ Add this config file at `config/imgix-picture`:
 return [
     'imgixUrl' => getenv('IMGIX_URL'),
     'imgixApiKey' => getenv('IMGIX_API_KEY'),
+    // altTextHandle => 'alternativeText' /* optional override */
+    // 'defaultParameters' => [] /* override the default imgix parameters */
+    // 'useNativeTransforms' => false /* skip imgix and use Craft Transforms instead */
+    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png' /* Display the fallback if an asset is not provided */
 ];
 ```
+
+### Alternative Text
+
+This plugin assumes that Craft's native `alt` text field has been added to the desired Assets field layout. If you are using a different field for alternative text, you can override this by providing a different field handle in your config file.
+
+@todo document other configuration options
+
+### Fallback Image
+
+Imgix has it's own default image that you can set for a source. Apart from that, if you wish to configure an image to display when an Asset is not provided to the picture function you can set that here.
+
+## Usage
 
 Use the `picture` function to generate a `<picture>` tag from an Asset.
 
@@ -79,16 +97,29 @@ Use the `picture` function to generate a `<picture>` tag from an Asset.
 ) }}
 ```
 
-The first argument must be a Craft Asset object.
+### The `picture()` function
 
-The second is an array of transforms. If only one transform is passed in, an `<img>` tag will be rendered instead of a `picture` tag.
-
-The transforms may contain any parameter in the imgix [Rendering API](https://docs.imgix.com/apis/rendering/overview). Recommended default attributes are set by the plugin as a baseline, but will be overidden with any you provide here.
-
-The third parameter is an object representing html attributes you wish to add to the rendered element. Images are lazy loading by default, but you can override this, for example:
+This function is called with 3 arguments:
+1.  The first argument must be a Craft Asset object.
+1. The second is an array of transforms.
+    - a non-standard `breakpoint` property is a min-width pixel value that adds a min-width media query to `<source>` elements inside the picture, ex: `media="(min-width: 1024px)"`.
+    - Transforms may contain any parameter in the imgix [Rendering API](https://docs.imgix.com/apis/rendering/overview). Recommended default attributes are set by the plugin as a baseline, but will be overidden with any you provide here.
+    ```php
+    /* Defaults are */
+    ```
+    - If only one transform is passed in, an `<img>` tag will be rendered instead of a `picture` tag.
+1. The third parameter is an object representing html attributes you wish to add to the rendered element. Images are lazy loading by default, but you can override this, for example:
 
 ```
 {
     fetchpriority: 'high',
 }
 ```
+
+### Other functions
+
+@todo document these...
+
+- `downloadUrl()`
+- `imgixAttrs`
+- `getMaxDimensions`
