@@ -2,7 +2,6 @@
 
 namespace mostlyserious\craftimgixpicture\services;
 
-use craft\helpers\App;
 use yii\base\Component;
 use craft\elements\Asset;
 use mostlyserious\craftimgixpicture\Plugin;

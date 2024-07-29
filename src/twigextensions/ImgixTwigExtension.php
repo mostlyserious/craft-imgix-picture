@@ -63,6 +63,14 @@ class ImgixTwigExtension extends AbstractExtension
         return $attributes;
     }
 
+    /**
+     * Generate a picture element.
+     *
+     * @param Asset|null $asset A Craft Asset object.
+     * @param array $transforms An array of imgix transforms with imgix params.
+     * @param array $img_attributes An array of HTML attributes to add to the final image tag.
+     * @return string The generated picture tag as a raw HTML string.
+     */
     public function picture(Asset|null $asset, array $transforms = [], array $img_attributes = [])
     {
         if (!$asset || !($asset instanceof Asset)) {
@@ -213,9 +221,8 @@ class ImgixTwigExtension extends AbstractExtension
     /**
      * Filters and sorts transforms by their breakpoint from smallest to largest.
      *
-     * @param  array $transform  an array of transform settings.
-     * @param  mixed $transforms
-     * @return array The sorted transforms.
+     * @param  array $transforms  an array of transform settings.
+=     * @return array The sorted transforms.
      */
     private function sortByBreakpoint($transforms)
     {
@@ -240,8 +247,7 @@ class ImgixTwigExtension extends AbstractExtension
     /**
      * Gets the first transform with no breakpoint set.
      *
-     * @param  array $transform  an array of transforms.
-     * @param  mixed $transforms
+     * @param  array $transforms  an array of transforms.
      * @return array The fallback transform.
      */
     private function getFallback($transforms)

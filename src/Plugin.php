@@ -21,6 +21,8 @@ use mostlyserious\craftimgixpicture\twigextensions\ImgixTwigExtension;
 /**
  * imgix Picture plugin
  *
+ * @property Settings $settings
+ * @property UrlService $urlService
  * @method static Plugin getInstance()
  * @method Settings getSettings()
  * @author Mostly Serious
