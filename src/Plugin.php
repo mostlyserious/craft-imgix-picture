@@ -50,8 +50,8 @@ class Plugin extends BasePlugin
     {
         parent::init();
 
-        $this->imgixUrl = $this->setting->getImgixUrl();
-        $this->imgixApiKey = $this->setting->getImgixApiKey();
+        $this->imgixUrl = $this->settings->getImgixUrl();
+        $this->imgixApiKey = $this->settings->getImgixApiKey();
 
         /** Add the picture() Twig function */
         Craft::$app->view->registerTwigExtension(ImgixTwigExtension::instance());
