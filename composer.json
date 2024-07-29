@@ -1,5 +1,5 @@
 {
-    "name": "mostly-serious/craft-imgix-picture",
+    "name": "mostlyserious/craft-imgix-picture",
     "description": "A Twig helper to generate picture tags from a set of imgix transforms.",
     "type": "craft-plugin",
     "license": "proprietary",

@@ -19,7 +19,7 @@ Open your terminal and run the following commands:
 cd /path/to/my-project.test
 
 # tell Composer to load the plugin
-composer require mostly-serious/craft-imgix-picture
+composer require mostlyserious/craft-imgix-picture
 
 # tell Craft to install the plugin
 ./craft plugin/install imgix-picture
