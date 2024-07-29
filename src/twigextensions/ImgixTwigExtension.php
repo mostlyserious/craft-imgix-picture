@@ -3,14 +3,14 @@
 namespace mostlyserious\craftimgixpicture\twigextensions;
 
 use Craft;
-use craft\helpers\App;
-use Twig\TwigFunction;
-use craft\helpers\Html;
 use craft\elements\Asset;
+use craft\helpers\App;
+use craft\helpers\Html;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
-use Twig\Extension\AbstractExtension;
 use mostlyserious\craftimgixpicture\Plugin;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 class ImgixTwigExtension extends AbstractExtension
 {
@@ -37,7 +37,7 @@ class ImgixTwigExtension extends AbstractExtension
             new TwigFunction('picture', [$this, 'picture']),
             new TwigFunction('imgixAttrs', [$this, 'imgixAttrs']),
             new TwigFunction('downloadUrl', [$this, 'downloadUrl']),
-            new TwigFunction('getMaxDimensions', [$this, 'calculateMaxDimensions'])
+            new TwigFunction('getMaxDimensions', [$this, 'calculateMaxDimensions']),
         ];
     }
 
@@ -80,7 +80,7 @@ class ImgixTwigExtension extends AbstractExtension
                     [
                         'src' => UrlHelper::url($fallback_src),
                         'alt' => 'No Image Available',
-                        'aria-hidden' => 'true'
+                        'aria-hidden' => 'true',
                     ],
                     $img_attributes
                 )));
@@ -136,7 +136,7 @@ class ImgixTwigExtension extends AbstractExtension
                 ],
                 $img_attributes,
                 [
-                    'src' => $asset->url
+                    'src' => $asset->url,
                 ]
             )));
         }
@@ -155,7 +155,7 @@ class ImgixTwigExtension extends AbstractExtension
                 $default_img_attributes,
                 $this->buildAttributes($asset, $transform),
                 [
-                    'src' => $this->default_src
+                    'src' => $this->default_src,
                 ],
                 $img_attributes
             )));
@@ -180,7 +180,7 @@ class ImgixTwigExtension extends AbstractExtension
             $default_img_attributes,
             $this->buildAttributes($asset, $fallback_transform),
             [
-                'src' => $this->default_src
+                'src' => $this->default_src,
             ],
             $img_attributes
         );
@@ -226,11 +226,11 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function sortByBreakpoint($transforms)
     {
-        $result = array_filter($transforms, function ($item) {
+        $result = array_filter($transforms, function($item) {
             return isset($item['breakpoint']);
         });
 
-        usort($result, function ($a, $b) {
+        usort($result, function($a, $b) {
             $breakpoint_a = array_key_exists('breakpoint', $a)
                 ? intval($a['breakpoint'])
                 : 0;
@@ -252,7 +252,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function getFallback($transforms)
     {
-        $result = array_filter($transforms, function ($item) {
+        $result = array_filter($transforms, function($item) {
             return !isset($item['breakpoint']);
         });
 
@@ -303,14 +303,14 @@ class ImgixTwigExtension extends AbstractExtension
                     'fp-y' => $asset->focalPoint['y'],
                 ]
                 : [
-                    'crop' => 'faces,center'
+                    'crop' => 'faces,center',
                 ];
             $default_imgix_options = Plugin::getInstance()->settings->defaultParameters;
             if (count($default_imgix_options) === 0) {
                 $default_imgix_options = [
                     'auto' => 'format,compress',
                     'q' => 35,
-                    'fit' => 'max'
+                    'fit' => 'max',
                 ];
             }
             $transform = array_merge($default_imgix_options, $focal_point_defaults, $transform);
@@ -322,7 +322,7 @@ class ImgixTwigExtension extends AbstractExtension
         return [
             'srcset' => implode(', ', [
                 $url . '?' . http_build_query($transform) . ' 1x',
-                $url . '?' . http_build_query($transform_high_dpr) . ' 1.5x'
+                $url . '?' . http_build_query($transform_high_dpr) . ' 1.5x',
             ]),
             'media' => $breakpoint ? "(min-width: {$breakpoint}px)" : null,
             'width' => $dimensions['width'],
@@ -347,25 +347,25 @@ class ImgixTwigExtension extends AbstractExtension
         if ($new_width > 0 && $new_height > 0) {
             return [
                 'width' => $new_width,
-                'height' => $new_height
+                'height' => $new_height,
             ];
         }
         if ($new_width > 0 && $new_height === 0) {
             return [
                 'width' => $new_width,
-                'height' => ($new_width / $original_width) * $original_height
+                'height' => ($new_width / $original_width) * $original_height,
             ];
         }
         if ($new_width === 0 && $new_height > 0) {
             return [
                 'width' => ($new_height / $original_height) * $original_width,
-                'height' => $new_height
+                'height' => $new_height,
             ];
         }
 
         return [
             'width' => null,
-            'height' => null
+            'height' => null,
         ];
     }
 
@@ -377,7 +377,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function validateTransforms(array $transforms): bool
     {
-        return array_reduce($transforms, function ($carry, $item) {
+        return array_reduce($transforms, function($carry, $item) {
             return $carry && is_array($item);
         }, true);
     }

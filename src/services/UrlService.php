@@ -2,13 +2,12 @@
 
 namespace mostlyserious\craftimgixpicture\services;
 
-use yii\base\Component;
 use craft\elements\Asset;
 use mostlyserious\craftimgixpicture\Plugin;
+use yii\base\Component;
 
 class UrlService extends Component
 {
-
     /**
      * Generates the URL for a given asset at it's imgix source.
      *

@@ -2,7 +2,6 @@
 
 namespace mostlyserious\craftimgixpicture\models;
 
-use Craft;
 use craft\base\Model;
 use craft\helpers\App;
 
@@ -17,7 +16,7 @@ class Settings extends Model
     public $defaultParameters = [
         'auto' => 'format,compress',
         'q' => 35,
-        'fit' => 'max'
+        'fit' => 'max',
     ];
     public $useNativeTransforms = false;
     public $fallBackImageSrc = '';

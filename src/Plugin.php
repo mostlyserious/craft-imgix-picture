@@ -3,20 +3,19 @@
 namespace mostlyserious\craftimgixpicture;
 
 use Craft;
-use yii\base\Event;
 use craft\base\Model;
-use craft\helpers\App;
-use GuzzleHttp\Client;
+use craft\base\Plugin as BasePlugin;
 use craft\elements\Asset;
-use craft\services\Assets;
-use craft\services\Elements;
 use craft\events\ElementEvent;
 use craft\events\ReplaceAssetEvent;
-use craft\base\Plugin as BasePlugin;
+use craft\services\Assets;
+use craft\services\Elements;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use mostlyserious\craftimgixpicture\models\Settings;
 use mostlyserious\craftimgixpicture\services\UrlService;
 use mostlyserious\craftimgixpicture\twigextensions\ImgixTwigExtension;
+use yii\base\Event;
 
 /**
  * imgix Picture plugin
@@ -43,7 +42,7 @@ class Plugin extends BasePlugin
             'components' => [
                 'urlService' => [
                     'class' => UrlService::class,
-                ]
+                ],
             ],
         ];
     }
@@ -63,7 +62,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Elements::class,
                 Elements::EVENT_BEFORE_SAVE_ELEMENT,
-                function (ElementEvent $event) {
+                function(ElementEvent $event) {
                     $element = $event->element;
                     $isNewElement = $event->isNew;
                     $isAsset = $element instanceof Asset;
@@ -75,7 +74,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Asset::class,
                 Asset::EVENT_AFTER_DELETE,
-                function (Event $event): void {
+                function(Event $event): void {
                     /** @var Asset $asset */
                     $asset = $event->sender;
 
@@ -85,7 +84,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Assets::class,
                 Assets::EVENT_BEFORE_REPLACE_ASSET,
-                function (ReplaceAssetEvent $event) {
+                function(ReplaceAssetEvent $event) {
                     $this->purgeCache($event->asset);
                 }
             );
@@ -119,7 +118,7 @@ class Plugin extends BasePlugin
                     'json' => [
                         'data' => [
                             'attributes' => [
-                                'url' => $purgeUrl
+                                'url' => $purgeUrl,
                             ],
                             'type' => 'purges',
                         ],
