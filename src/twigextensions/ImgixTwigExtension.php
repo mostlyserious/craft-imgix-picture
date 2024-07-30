@@ -28,7 +28,7 @@ class ImgixTwigExtension extends AbstractExtension
 
     public function getName()
     {
-        return 'Imgix';
+        return 'MS Craft imgix Picture';
     }
 
     public function getFunctions()
@@ -226,11 +226,11 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function sortByBreakpoint($transforms)
     {
-        $result = array_filter($transforms, function($item) {
+        $result = array_filter($transforms, function ($item) {
             return isset($item['breakpoint']);
         });
 
-        usort($result, function($a, $b) {
+        usort($result, function ($a, $b) {
             $breakpoint_a = array_key_exists('breakpoint', $a)
                 ? intval($a['breakpoint'])
                 : 0;
@@ -252,7 +252,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function getFallback($transforms)
     {
-        $result = array_filter($transforms, function($item) {
+        $result = array_filter($transforms, function ($item) {
             return !isset($item['breakpoint']);
         });
 
@@ -278,8 +278,7 @@ class ImgixTwigExtension extends AbstractExtension
         };
 
         if ($this->useNative()) {
-            /* @todo, don't allow any non-imgix params here */
-            unset($transform['fit']);
+            $transform = $this->formatTransformForNative($transform);
             $asset->setTransform($transform);
 
             return [
@@ -343,13 +342,29 @@ class ImgixTwigExtension extends AbstractExtension
         $original_height = $asset->height ?? 0;
         $new_width = isset($transform['width']) ? intval($transform['width']) : 0;
         $new_height = isset($transform['height']) ? intval($transform['height']) : 0;
+        $is_crop = (
+            isset($transform['fit']) && in_array($transform['fit'], ['crop', 'clamp', 'facearea', 'fill', 'fillmax'])
+        ) || (
+            isset($transform['mode']) && $transform['mode'] === 'crop'
+        );
 
-        if ($new_width > 0 && $new_height > 0) {
+        /* If cropping, return desired new width and new height. Otherwise, calculate it based on the image aspect ratio */
+        if ($is_crop && $new_width > 0 && $new_height > 0) {
             return [
                 'width' => $new_width,
                 'height' => $new_height,
             ];
         }
+
+        /** If we are fitting to max and both a width and height are applied, go with the largest of the two. */
+        if ($new_width > 0 && $new_height > 0) {
+            if ($new_width > $new_height) {
+                $new_height = 0;
+            } else {
+                $new_width = 0;
+            }
+        }
+
         if ($new_width > 0 && $new_height === 0) {
             return [
                 'width' => $new_width,
@@ -377,7 +392,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function validateTransforms(array $transforms): bool
     {
-        return array_reduce($transforms, function($carry, $item) {
+        return array_reduce($transforms, function ($carry, $item) {
             return $carry && is_array($item);
         }, true);
     }
@@ -392,5 +407,57 @@ class ImgixTwigExtension extends AbstractExtension
         $settings = Plugin::getInstance()->settings;
 
         return $settings->useNativeTransforms || $settings->getImgixUrl() === '';
+    }
+
+    /**
+     * Formats the given transform to contain only valid keys for a Craft CMS native Transform.
+     *
+     * @param array $transform The transform array to format.
+     * @return array The formatted transform array.
+     */
+    private function formatTransformForNative(array $transform): array
+    {
+        $validKeys = [
+            'width',
+            'height',
+            'mode',
+            'quality',
+            'format',
+            'position',
+        ];
+
+        $validFormats = [
+            'jpg',
+            'gif',
+            'png',
+            'webp',
+            'avif',
+        ];
+
+        $formatted = $transform;
+
+        if (isset($formatted['w'])) {
+            $formatted['width'] = $formatted['w'];
+        }
+
+        if (isset($formatted['h'])) {
+            $formatted['height'] = $formatted['h'];
+        }
+
+        if (isset($formatted['fit']) && $formatted['fit'] === 'crop') {
+            $formatted['mode'] = 'crop';
+        } else {
+            $formatted['mode'] = 'fit';
+        }
+
+        if (isset($formatted['format']) && !in_array($formatted['format'], $validFormats)) {
+            unset($formatted['format']);
+        }
+
+        $formatted = array_filter($formatted, function ($key) use ($validKeys) {
+            return in_array($key, $validKeys);
+        }, ARRAY_FILTER_USE_KEY);
+
+        return $formatted;
     }
 }

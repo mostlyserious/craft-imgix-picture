@@ -48,22 +48,17 @@ Add then add this config file at `config/imgix-picture`:
 return [
     'imgixUrl' => getenv('IMGIX_URL'),
     'imgixApiKey' => getenv('IMGIX_API_KEY'),
-    // altTextHandle => 'alternativeText' /* optional override */
-    // 'defaultParameters' => [] /* override the default imgix parameters */
-    // 'useNativeTransforms' => false /* skip imgix and use Craft Transforms instead */
-    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png' /* Display the fallback if an asset is not provided */
+    // altTextHandle => 'alternativeText' /* optional */
+    // 'defaultParameters' => [] /* optional */
+    // 'useNativeTransforms' => false
+    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png'
 ];
 ```
 
-### Alternative Text
-
-This plugin assumes that Craft's native `alt` text field has been added to the desired Assets field layout. If you are using a different field for alternative text, you can override this by providing a different field handle in your config file.
-
-@todo document other configuration options
-
-### Fallback Image
-
-Imgix has it's own default image that you can set for a source. Apart from that, if you wish to configure an image to display when an Asset is not provided to the picture function you can set that here.
+- `altTextHandle` Alternative Text: This plugin assumes that Craft's native `alt` text field has been added to the desired Assets field layout. If you are using a different field for alternative text, you can override this by providing a different field handle in your config file.
+- `defaultParameters` Default Parameters: Override the default imgix parameters tuned for auto format and modest quality with your own defaults.
+- `useNativeTransforms` Craft Transforms: set to `true` to bypass imgix and use Craft Transforms instead.
+- `fallBackImageSrc` Fallback Image: Imgix has it's own default image that you can set for a source. Apart from that, if you wish to configure an image to display when an Asset is not provided to the picture function you can set that here.
 
 ## Usage
 
@@ -106,6 +101,11 @@ This function is called with 3 arguments:
     - Transforms may contain any parameter in the imgix [Rendering API](https://docs.imgix.com/apis/rendering/overview). Recommended default attributes are set by the plugin as a baseline, but will be overidden with any you provide here.
     ```php
     /* Defaults are */
+    [
+        'auto' => 'format,compress',
+        'q' => 35,
+        'fit' => 'max',
+    ];
     ```
     - If only one transform is passed in, an `<img>` tag will be rendered instead of a `picture` tag.
 1. The third parameter is an object representing html attributes you wish to add to the rendered element. Images are lazy loading by default, but you can override this, for example:
@@ -116,10 +116,7 @@ This function is called with 3 arguments:
 }
 ```
 
-### Other functions
-
-@todo document these...
-
-- `downloadUrl()`
-- `imgixAttrs`
-- `getMaxDimensions`
+### Other Functions
+- `downloadUrl()` creates a force download link to an imgix asset with the [dl](https://docs.imgix.com/apis/rendering/format/download) param
+- `imgixAttrs` returns the imgix attributes without a picture tag
+- `getMaxDimensions` returns the max dimensions of an asset within the defined parameters
