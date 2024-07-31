@@ -368,12 +368,12 @@ class ImgixTwigExtension extends AbstractExtension
         if ($new_width > 0 && $new_height === 0) {
             return [
                 'width' => $new_width,
-                'height' => ($new_width / $original_width) * $original_height,
+                'height' => round(($new_width / $original_width) * $original_height),
             ];
         }
         if ($new_width === 0 && $new_height > 0) {
             return [
-                'width' => ($new_height / $original_height) * $original_width,
+                'width' => round(($new_height / $original_height) * $original_width),
                 'height' => $new_height,
             ];
         }
