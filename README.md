@@ -98,6 +98,7 @@ This function is called with 3 arguments:
 1.  The first argument must be a Craft Asset object.
 1. The second is an array of transforms.
     - a non-standard `breakpoint` property is a min-width pixel value that adds a min-width media query to `<source>` elements inside the picture, ex: `media="(min-width: 1024px)"`.
+    - Focal Point parameters are added automatically if the Asset has a focal point.
     - Transforms may contain any parameter in the imgix [Rendering API](https://docs.imgix.com/apis/rendering/overview). Recommended default attributes are set by the plugin as a baseline, but will be overidden with any you provide here.
     ```php
     /* Defaults are */
@@ -117,6 +118,7 @@ This function is called with 3 arguments:
 ```
 
 ### Other Functions
+- `singleSrc()` create a single transformed url suitable for a `src=""` attribute
 - `downloadUrl()` creates a force download link to an imgix asset with the [dl](https://docs.imgix.com/apis/rendering/format/download) param
 - `imgixAttrs` returns the imgix attributes without a picture tag
 - `getMaxDimensions` returns the max dimensions of an asset within the defined parameters
