@@ -16,7 +16,11 @@ class UrlService extends Component
      */
     public function sourceUrl(Asset $asset): string
     {
-        $src = trim(Plugin::getInstance()->settings->getImgixUrl(), '/') . '/' . $asset->path;
+        $url = $asset->getUrl();
+        $parsedUrl = parse_url($url);
+        $path = $parsedUrl['path'] ?? '';
+        $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
+        $src = trim(Plugin::getInstance()->settings->getImgixUrl(), '/') . '/' . $path . $query;
 
         return $src;
     }
