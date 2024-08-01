@@ -35,6 +35,7 @@ class ImgixTwigExtension extends AbstractExtension
     {
         return [
             new TwigFunction('picture', [$this, 'picture']),
+            new TwigFunction('singleSrc', [$this, 'singleSrc']),
             new TwigFunction('imgixAttrs', [$this, 'imgixAttrs']),
             new TwigFunction('downloadUrl', [$this, 'downloadUrl']),
             new TwigFunction('getMaxDimensions', [$this, 'calculateMaxDimensions']),
@@ -61,6 +62,32 @@ class ImgixTwigExtension extends AbstractExtension
         $attributes['src'] = $this->default_src;
 
         return $attributes;
+    }
+
+    /**
+     * Generates a single source URL for an asset for use when you need only one size.
+     *
+     * @param Asset $asset The asset object to generate the URL for.
+     * @param array $transform An array of imgix params.
+     * @return string The generated URL with suitable for a 'src' attribute.
+     */
+    public function singleSrc(Asset $asset, array $transform = [])
+    {
+        if (array_key_exists('breakpoint', $transform)) {
+            unset($transform['breakpoint']);
+        };
+
+        if ($this->useNative()) {
+            $transform = $this->formatTransformForNative($transform);
+            $asset->setTransform($transform);
+
+            return $asset->getUrl();
+        }
+
+        $transform = $this->inheritImgixDefaults($asset, $transform);
+        $url = Plugin::getInstance()->urlService->sourceUrl($asset);
+
+        return $url . '?' . http_build_query($transform);
     }
 
     /**
@@ -291,30 +318,7 @@ class ImgixTwigExtension extends AbstractExtension
             ];
         }
 
-        if (
-            isset($transform['fit'], $transform['width'], $transform['height'])
-            && $transform['fit'] === 'crop'
-        ) {
-            $focal_point_defaults = $asset->hasFocalPoint
-                ? [
-                    'crop' => 'focalpoint',
-                    'fp-x' => $asset->focalPoint['x'],
-                    'fp-y' => $asset->focalPoint['y'],
-                ]
-                : [
-                    'crop' => 'faces,center',
-                ];
-            $default_imgix_options = Plugin::getInstance()->settings->defaultParameters;
-            if (count($default_imgix_options) === 0) {
-                $default_imgix_options = [
-                    'auto' => 'format,compress',
-                    'q' => 35,
-                    'fit' => 'max',
-                ];
-            }
-            $transform = array_merge($default_imgix_options, $focal_point_defaults, $transform);
-        }
-
+        $transform = $this->inheritImgixDefaults($asset, $transform);
         $transform_high_dpr = array_merge($transform, ['dpr' => 1.5]);
         $url = Plugin::getInstance()->urlService->sourceUrl($asset);
 
@@ -382,6 +386,45 @@ class ImgixTwigExtension extends AbstractExtension
             'width' => null,
             'height' => null,
         ];
+    }
+
+    /**
+     * Merges the default parameters with a transform's parameters, the transform params override the defaults.
+     *
+     * @param Asset $asset The asset object.
+     * @param array $transform The transform parameters.
+     * @return array The merged parameters.
+     */
+    private function inheritImgixDefaults(Asset $asset, array $transform): array
+    {
+        $default_params = [
+            'auto' => 'format,compress',
+            'q' => 35,
+            'fit' => 'max',
+        ];
+
+        $config_params = Plugin::getInstance()->settings->defaultParameters;
+        if (is_array($config_params) && count($config_params) > 0) {
+            $default_params = array_merge($default_params, $config_params);
+        }
+
+        if (isset($transform['fit']) && $transform['fit'] === 'crop') {
+            $focal_point_defaults = $asset->hasFocalPoint
+                ? [
+                    'crop' => 'focalpoint',
+                    'fp-x' => $asset->focalPoint['x'],
+                    'fp-y' => $asset->focalPoint['y'],
+                ]
+                : [
+                    'crop' => 'faces,center',
+                ];
+
+            $default_params = array_merge($default_params, $focal_point_defaults);
+        }
+
+        $result = array_merge($default_params, $transform);
+
+        return $result;
     }
 
     /**
