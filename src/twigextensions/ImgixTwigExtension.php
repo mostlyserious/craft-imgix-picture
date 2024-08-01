@@ -344,6 +344,14 @@ class ImgixTwigExtension extends AbstractExtension
     {
         $original_width = $asset->width ?? 0;
         $original_height = $asset->height ?? 0;
+
+        if (!$original_width  > 0 || !$original_height > 0) {
+            return [
+                'width' => null,
+                'height' => null
+            ];
+        }
+
         $new_width = isset($transform['width']) ? intval($transform['width']) : 0;
         $new_height = isset($transform['height']) ? intval($transform['height']) : 0;
         $is_crop = (
@@ -384,7 +392,7 @@ class ImgixTwigExtension extends AbstractExtension
 
         return [
             'width' => null,
-            'height' => null,
+            'height' => null
         ];
     }
 
