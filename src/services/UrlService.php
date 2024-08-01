@@ -18,7 +18,7 @@ class UrlService extends Component
     {
         $url = $asset->getUrl();
         $parsedUrl = parse_url($url);
-        $path = $parsedUrl['path'] ?? '';
+        $path = isset($parsedUrl['path']) ? ltrim($parsedUrl['path'], '/') : '';
         $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
         $src = trim(Plugin::getInstance()->settings->getImgixUrl(), '/') . '/' . $path . $query;
 
