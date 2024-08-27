@@ -345,7 +345,7 @@ class ImgixTwigExtension extends AbstractExtension
         $original_width = $asset->width ?? 0;
         $original_height = $asset->height ?? 0;
 
-        if (!$original_width  > 0 || !$original_height > 0) {
+        if ($original_width <= 0 || $original_height <= 0) {
             return [
                 'width' => null,
                 'height' => null
