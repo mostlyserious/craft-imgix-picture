@@ -30,8 +30,8 @@ use yii\base\Event;
  */
 class Plugin extends BasePlugin
 {
-    public string $schemaVersion = '1.0.0';
-    public bool $hasCpSettings = false;
+    public $schemaVersion = '1.0.0';
+    public $hasCpSettings = false;
 
     public string $imgixUrl = '';
     public string $imgixApiKey = '';
@@ -62,7 +62,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Elements::class,
                 Elements::EVENT_BEFORE_SAVE_ELEMENT,
-                function(ElementEvent $event) {
+                function (ElementEvent $event) {
                     $element = $event->element;
                     $isNewElement = $event->isNew;
                     $isAsset = $element instanceof Asset;
@@ -74,7 +74,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Asset::class,
                 Asset::EVENT_AFTER_DELETE,
-                function(Event $event): void {
+                function (Event $event): void {
                     /** @var Asset $asset */
                     $asset = $event->sender;
 
@@ -84,7 +84,7 @@ class Plugin extends BasePlugin
             Event::on(
                 Assets::class,
                 Assets::EVENT_BEFORE_REPLACE_ASSET,
-                function(ReplaceAssetEvent $event) {
+                function (ReplaceAssetEvent $event) {
                     $this->purgeCache($event->asset);
                 }
             );
