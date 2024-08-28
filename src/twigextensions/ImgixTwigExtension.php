@@ -8,6 +8,7 @@ use craft\helpers\App;
 use craft\helpers\Html;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
+use mostlyserious\craftimgixpicture\services\UrlService;
 use mostlyserious\craftimgixpicture\Plugin;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -320,7 +321,8 @@ class ImgixTwigExtension extends AbstractExtension
 
         $transform = $this->inheritImgixDefaults($asset, $transform);
         $transform_high_dpr = array_merge($transform, ['dpr' => 1.5]);
-        $url = Plugin::getInstance()->urlService->sourceUrl($asset);
+        $urlService = new UrlService();
+        $url = $urlService->sourceUrl($asset);
 
         return [
             'srcset' => implode(', ', [
