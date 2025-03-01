@@ -26,11 +26,6 @@ class VolumeSettings extends Model
     public $altTextHandle = '';
 
     /**
-     * @var array The default parameters for imgix transformations for this volume
-     */
-    public $defaultParameters = [];
-
-    /**
      * @inheritdoc
      */
     public function defineRules(): array
