@@ -10,6 +10,8 @@ use craft\helpers\App;
  */
 class Settings extends Model
 {
+    public const DEFAULT_ALT_TEXT_HANDLE = 'alt';
+
     /**
      * @var string The imgix API key
      */
@@ -56,7 +58,7 @@ class Settings extends Model
     /**
      * @var string The handle for the alt text field
      */
-    public $altTextHandle = 'alt';
+    public $altTextHandle = '';
 
     /**
      * @var bool Whether to use native transforms
@@ -164,11 +166,11 @@ class Settings extends Model
             $volumeHandle !== null &&
             $volumeSettings = $this->getVolumeSettings($volumeHandle)
         ) {
-            return $volumeSettings->altTextHandle;
+            return $volumeSettings->altTextHandle !== '' ? $volumeSettings->altTextHandle : self::DEFAULT_ALT_TEXT_HANDLE;
         }
 
         /** Fall back to legacy settings */
-        return $this->altTextHandle;
+        return $this->altTextHandle !== '' ? $this->altTextHandle : self::DEFAULT_ALT_TEXT_HANDLE;
     }
 
     /**

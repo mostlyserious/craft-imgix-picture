@@ -9,7 +9,6 @@ use craft\helpers\Html;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
 use mostlyserious\craftimgixpicture\Plugin;
-use mostlyserious\craftimgixpicture\services\UrlService;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -145,7 +144,7 @@ class ImgixTwigExtension extends AbstractExtension
                 : '';
         }
 
-        $alt_text_handle = Plugin::getInstance()->settings->getVolumeAltTextHandle($asset->getVolume()->handle ?? null);
+        $alt_text_handle = Plugin::getInstance()->settings->getVolumeAltTextHandle($asset->getVolume()->handle);
         $default_img_attributes = [
             'loading' => 'lazy',
             'alt' => $asset->{$alt_text_handle} ?? '',
@@ -263,11 +262,11 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function sortByBreakpoint($transforms)
     {
-        $result = array_filter($transforms, function ($item) {
+        $result = array_filter($transforms, function($item) {
             return isset($item['breakpoint']);
         });
 
-        usort($result, function ($a, $b) {
+        usort($result, function($a, $b) {
             $breakpoint_a = array_key_exists('breakpoint', $a)
                 ? intval($a['breakpoint'])
                 : 0;
@@ -289,7 +288,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function getFallback($transforms)
     {
-        $result = array_filter($transforms, function ($item) {
+        $result = array_filter($transforms, function($item) {
             return !isset($item['breakpoint']);
         });
 
@@ -457,7 +456,7 @@ class ImgixTwigExtension extends AbstractExtension
      */
     private function validateTransforms(array $transforms): bool
     {
-        return array_reduce($transforms, function ($carry, $item) {
+        return array_reduce($transforms, function($carry, $item) {
             return $carry && is_array($item);
         }, true);
     }
@@ -507,7 +506,7 @@ class ImgixTwigExtension extends AbstractExtension
             unset($formatted['format']);
         }
 
-        $formatted = array_filter($formatted, function ($key) use ($validKeys) {
+        $formatted = array_filter($formatted, function($key) use ($validKeys) {
             return in_array($key, $validKeys);
         }, ARRAY_FILTER_USE_KEY);
 
