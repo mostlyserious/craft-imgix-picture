@@ -16,12 +16,14 @@ class UrlService extends Component
      */
     public function sourceUrl(Asset $asset): string
     {
-        $url = $asset->getUrl();
-        $parsedUrl = parse_url($url);
+        $parsedUrl = parse_url($asset->getUrl());
         $path = isset($parsedUrl['path']) ? ltrim($parsedUrl['path'], '/') : '';
         $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
-        $src = trim(Plugin::getInstance()->settings->getImgixUrl(), '/') . '/' . $path . $query;
+        $volumeHandle = $asset->getVolume()->handle ?? null;
+        $imgixUrl = trim(Plugin::getInstance()->settings->getVolumeSourceUrl($volumeHandle), '/');
 
-        return $src;
+        $result = $imgixUrl . '/' . $path . $query;
+
+        return $result;
     }
 }

@@ -9,6 +9,7 @@ use craft\helpers\Html;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
 use mostlyserious\craftimgixpicture\Plugin;
+use mostlyserious\craftimgixpicture\services\UrlService;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -28,7 +29,7 @@ class ImgixTwigExtension extends AbstractExtension
 
     public function getName()
     {
-        return 'MS Craft imgix Picture';
+        return 'imgix Picture';
     }
 
     public function getFunctions()
@@ -77,7 +78,11 @@ class ImgixTwigExtension extends AbstractExtension
             unset($transform['breakpoint']);
         };
 
-        if ($this->useNative()) {
+        if (
+            Plugin::getInstance()
+            ->settings
+            ->getVolumeUsesNative($asset->getVolume()->handle)
+        ) {
             $transform = $this->formatTransformForNative($transform);
             $asset->setTransform($transform);
 
@@ -125,7 +130,12 @@ class ImgixTwigExtension extends AbstractExtension
         }
 
         $supported_extensions = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'svg', 'gif'];
-        if (!$this->useNative()) {
+
+        if (
+            Plugin::getInstance()
+            ->settings
+            ->getVolumeUsesNative($asset->getVolume()->handle) === false
+        ) {
             $supported_extensions[] = 'pdf';
         }
 
@@ -135,7 +145,7 @@ class ImgixTwigExtension extends AbstractExtension
                 : '';
         }
 
-        $alt_text_handle = Plugin::getInstance()->settings->altTextHandle;
+        $alt_text_handle = Plugin::getInstance()->settings->getVolumeAltTextHandle($asset->getVolume()->handle ?? null);
         $default_img_attributes = [
             'loading' => 'lazy',
             'alt' => $asset->{$alt_text_handle} ?? '',
@@ -249,7 +259,7 @@ class ImgixTwigExtension extends AbstractExtension
      * Filters and sorts transforms by their breakpoint from smallest to largest.
      *
      * @param  array $transforms  an array of transform settings.
-=     * @return array The sorted transforms.
+     * @return array The sorted transforms.
      */
     private function sortByBreakpoint($transforms)
     {
@@ -304,7 +314,11 @@ class ImgixTwigExtension extends AbstractExtension
             unset($transform['breakpoint']);
         };
 
-        if ($this->useNative()) {
+        if (
+            Plugin::getInstance()
+            ->settings
+            ->getVolumeUsesNative($asset->getVolume()->handle)
+        ) {
             $transform = $this->formatTransformForNative($transform);
             $asset->setTransform($transform);
 
@@ -348,7 +362,7 @@ class ImgixTwigExtension extends AbstractExtension
         if ($original_width <= 0 || $original_height <= 0) {
             return [
                 'width' => null,
-                'height' => null
+                'height' => null,
             ];
         }
 
@@ -392,7 +406,7 @@ class ImgixTwigExtension extends AbstractExtension
 
         return [
             'width' => null,
-            'height' => null
+            'height' => null,
         ];
     }
 
@@ -446,18 +460,6 @@ class ImgixTwigExtension extends AbstractExtension
         return array_reduce($transforms, function ($carry, $item) {
             return $carry && is_array($item);
         }, true);
-    }
-
-    /**
-     * Whether to use native Craft transforms.
-     *
-     * @return bool true if the required IMGIX config var does not exist
-     */
-    private function useNative(): bool
-    {
-        $settings = Plugin::getInstance()->settings;
-
-        return $settings->useNativeTransforms || $settings->getImgixUrl() === '';
     }
 
     /**

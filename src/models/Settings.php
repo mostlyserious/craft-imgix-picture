@@ -10,35 +10,172 @@ use craft\helpers\App;
  */
 class Settings extends Model
 {
-    public $imgixUrl = '';
+    /**
+     * @var string The imgix API key
+     */
     public $imgixApiKey = '';
-    public $altTextHandle = 'alt';
+
+    /**
+     * @var array Volume-specific settings keyed by Volume handle
+     * Example format:
+     * [
+     *     'uploads' => [
+     *         'imgixSourceUrl' => 'https://uploads.imgix.net',
+     *     ],
+     * ]
+     */
+    public $volumes = [];
+
+    /**
+     * @var array Cached volume settings models
+     */
+    private $_volumeSettings = [];
+
+    /**
+     * @var array The default parameters for imgix transformations
+     */
     public $defaultParameters = [
         'auto' => 'format,compress',
         'q' => 35,
         'fit' => 'max',
     ];
-    public $useNativeTransforms = false;
+
+    /**
+     * @var string The fallback image source
+     */
     public $fallBackImageSrc = '';
 
+
+    /** Legacy Config Settings */
+
+    /**
+     * @var string The imgix URL (legacy setting)
+     */
+    public $imgixUrl = '';
+
+    /**
+     * @var string The handle for the alt text field
+     */
+    public $altTextHandle = 'alt';
+
+    /**
+     * @var bool Whether to use native transforms
+     */
+    public $useNativeTransforms = false;
+
+    /**
+     * @inheritdoc
+     */
     public function defineRules(): array
     {
         return [
+            [['imgixApiKey', 'fallBackImageSrc'], 'string'],
+            /** Legacy - these should now be set on a per-volume basis */
             [['useNativeTransforms'], 'boolean'],
-            [['imgixUrl', 'imgixApiKey', 'fallBackImageSrc', 'altTextHandle'], 'string'],
+            [['imgixUrl', 'altTextHandle'], 'string'],
         ];
     }
 
-    public function getImgixUrl(): string
-    {
-        return strval(App::parseEnv($this->imgixUrl));
-    }
-
+    /**
+     * Get the imgix API key
+     *
+     * @return string The imgix API key
+     */
     public function getImgixApiKey(): string
     {
         return strval(App::parseEnv($this->imgixApiKey));
     }
 
+    /**
+     * Get the VolumeSettings Model for a specific Asset Volume
+     *
+     * @param string $volumeHandle The volume handle
+     * @return VolumeSettings|null The volume settings model
+     */
+    public function getVolumeSettings(string $volumeHandle): ?VolumeSettings
+    {
+        if (!isset($this->_volumeSettings[$volumeHandle])) {
+            if (!isset($this->volumes[$volumeHandle])) {
+                return null;
+            }
+
+            $settings = $this->volumes[$volumeHandle];
+
+            // Handle legacy 'imgixUrl' property
+            if (isset($settings['imgixUrl']) && !isset($settings['imgixSourceUrl'])) {
+                $settings['imgixSourceUrl'] = $settings['imgixUrl'];
+                unset($settings['imgixUrl']);
+            }
+
+            $volumeSettings = new VolumeSettings($settings);
+            $this->_volumeSettings[$volumeHandle] = $volumeSettings;
+        }
+
+        return $this->_volumeSettings[$volumeHandle];
+    }
+
+    /**
+     * Get the imgix URL for a specific volume
+     *
+     * @param string|null $volumeHandle The volume handle
+     * @return string The imgix URL
+     */
+    public function getVolumeSourceUrl(?string $volumeHandle = null): string
+    {
+        if (
+            $volumeHandle !== null &&
+            $volumeSettings = $this->getVolumeSettings($volumeHandle)
+        ) {
+            return $volumeSettings->getImgixSourceUrl();
+        }
+
+        /** Fall back to legacy settings */
+        return strval(App::parseEnv($this->imgixUrl));
+    }
+
+    /**
+     * Check if native transforms should be used for a specific volume
+     *
+     * @param string|null $volumeHandle The volume handle
+     * @return bool Whether to use native transforms
+     */
+    public function getVolumeUsesNative(?string $volumeHandle = null): bool
+    {
+        if (
+            $volumeHandle !== null &&
+            $volumeSettings = $this->getVolumeSettings($volumeHandle)
+        ) {
+            return ($volumeSettings->imgixSourceUrl !== '') ? $volumeSettings->useNativeTransforms : true;
+        }
+
+        /** Fall back to legacy settings */
+        return ($this->imgixUrl !== '') ? $this->useNativeTransforms : true;
+    }
+
+    /**
+     * Get the alt text handle for a specific volume
+     *
+     * @param string|null $volumeHandle The volume handle
+     * @return string The alt text handle
+     */
+    public function getVolumeAltTextHandle(?string $volumeHandle = null): string
+    {
+        if (
+            $volumeHandle !== null &&
+            $volumeSettings = $this->getVolumeSettings($volumeHandle)
+        ) {
+            return $volumeSettings->altTextHandle;
+        }
+
+        /** Fall back to legacy settings */
+        return $this->altTextHandle;
+    }
+
+    /**
+     * Get the fallback image source
+     *
+     * @return string The fallback image source
+     */
     public function getFallBackImageSrc(): string
     {
         return strval(App::parseEnv($this->fallBackImageSrc));

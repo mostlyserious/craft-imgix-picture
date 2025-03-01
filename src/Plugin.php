@@ -33,9 +33,6 @@ class Plugin extends BasePlugin
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = false;
 
-    public string $imgixUrl = '';
-    public string $imgixApiKey = '';
-
     public static function config(): array
     {
         return [
@@ -51,14 +48,13 @@ class Plugin extends BasePlugin
     {
         parent::init();
 
-        $this->imgixUrl = $this->settings->getImgixUrl();
-        $this->imgixApiKey = $this->settings->getImgixApiKey();
-
-        /** Add the picture() Twig function */
+        /** Add the picture() and other Twig functions */
         Craft::$app->view->registerTwigExtension(ImgixTwigExtension::instance());
 
-        /** Purge IMGIX for certain Asset events */
-        if ($this->imgixApiKey !== '') {
+        $imgixApiKey = $this->settings->getImgixApiKey();
+
+        /** Purge imgix on certain Asset events */
+        if ($imgixApiKey !== '') {
             Event::on(
                 Elements::class,
                 Elements::EVENT_BEFORE_SAVE_ELEMENT,
@@ -112,7 +108,7 @@ class Plugin extends BasePlugin
             try {
                 $guzzleClient->post('https://api.imgix.com/api/v1/purge', [
                     'headers' => [
-                        'Authorization' => sprintf('Bearer %s', $this->imgixApiKey),
+                        'Authorization' => sprintf('Bearer %s', $this->settings->getImgixApiKey()),
                         'Content-Type' => 'application/vnd.api+json',
                     ],
                     'json' => [
@@ -127,7 +123,7 @@ class Plugin extends BasePlugin
             } catch (ClientException $e) {
                 $response = $e->getResponse();
                 $message = [
-                    'Failed to purge IMGIX cache.',
+                    'Failed to purge imgix cache.',
                     'Error Code: ' . $e->getResponse()->getStatusCode(),
                     'Reason: ' . $response->getReasonPhrase(),
                 ];

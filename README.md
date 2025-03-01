@@ -1,10 +1,12 @@
 # imgix Picture
 
-A Twig helper to generate picture tags from a set of imgix transforms.
+A Twig helper to generate responsive, optimized `<picture>` tags from a set of image transforms. It is intended for use with imgix, but can be used with Craft's native transforms also.
 
 ## Requirements
 
 This plugin requires Craft CMS 4.9.0 or later, and PHP 8.0.2 or later.
+
+It assumes that you have at least one Asset Volume and File System configured (Typically an Amazon S3 bucket) and a corresponding imgix source that references that Asset Volume's File System.
 
 ## Installation
 
@@ -25,38 +27,71 @@ composer require mostlyserious/craft-imgix-picture
 ./craft plugin/install imgix-picture
 ```
 
+## Getting Started
+
+Create an [imgix account](https://dashboard.imgix.com/sign-up) with at least one source and an [API Key](https://docs.imgix.com/apis/management/overview).
+
+The API key requires `Purge` permissions, and it is used only to purge assets on Asset events, such as replace.
+
+Add your imgix url and API key as environment variables to your `.env` file.
+
+```
+IMGIX_API_KEY="aXzY....."
+IMGIX_SOURCE_URL="https://example.imgix.net"
+```
+
 ## Configuration
 
-This plugin assumes that you have one Asset Volume and File System configured (Typically an Amazon S3 bucket) an an imgix source that references that File System. Note: multiple imgix sources are not supported at this time.
+Create a config file at `/config/imgix-picture.php`.
 
-To get started, create an [imgix account](https://dashboard.imgix.com/sign-up) with a source and an [API Key](https://docs.imgix.com/apis/management/overview).
-
-The API key requires `Purge` permissions, and it is used only to purge assets on Craft's Asset events, such as replace.
-
-Add your imgix url and API key as environment variables in your `.env` file.
-
-```
-IMGIX_URL="https://example.imgix.net"
-IMGIX_API_KEY="aXzY....."
-```
-
-Add then add this config file at `config/imgix-picture`:
+Configure an imgix source for each Asset Volume by adding each volume to the `volumes` array using the volume handle as the key.
 
 ```php
 <?php
 
 return [
-    'imgixUrl' => getenv('IMGIX_URL'),
     'imgixApiKey' => getenv('IMGIX_API_KEY'),
-    // altTextHandle => 'alternativeText' /* optional */
+    'volumes' => [
+        /** Settings for the "Uploads" volume */
+        'uploads' => [
+            'imgixSourceUrl' => getenv('IMGIX_SOURCE_URL'),
+            // 'useNativeTransforms' => false /* optional */
+            // 'altTextHandle' => 'alternativeText' /* optional */
+        ],
+        /** Settings for the other volumes */
+        // 'volumeHandle' => [
+        // ...
+        // ],
+    ],
     // 'defaultParameters' => [] /* optional */
-    // 'useNativeTransforms' => false
-    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png'
+    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png' /* optional */
 ];
 ```
 
-- `altTextHandle` Alternative Text: This plugin assumes that Craft's native `alt` text field has been added to the desired Assets field layout. If you are using a different field for alternative text, you can override this by providing a different field handle in your config file.
-- `defaultParameters` Default Parameters: Override the default imgix parameters tuned for auto format and modest quality with your own defaults.
+If no Volume handle is found, Craft's native transforms are used. You can also force a volume to use native transforms by setting the `useNativeTransforms` config for that volume to `true`.
+
+### Legacy Configuration
+
+Early versions of the plugin used a single imgix source that was applied to all volumes. It is recommended to migrate to a per-volume configuration, as described above; but the following flat configuration is still supported using the `imgixUrl` key. This is equivalent to having one Volume configured:
+
+```php
+<?php
+
+return [
+    'imgixApiKey' => getenv('IMGIX_API_KEY'),
+    'imgixUrl' => getenv('IMGIX_URL'),
+    // 'useNativeTransforms' => false /* optional */
+    // 'altTextHandle' => 'alternativeText' /* optional */
+    // 'defaultParameters' => [] /* optional */
+    // 'fallBackImageSrc' => '/static-assets/default-image-missing-photo.png' /* optional */
+];
+```
+
+### Settings Explained
+
+- `altTextHandle` Alternative Text: This plugin assumes that Craft's native `alt` text field has been added to the desired Asset Volume's field layout. If you are using a different field for alternative text, you can override this by providing a different field handle in your config file.
+- `defaultParameters` Default Parameters: The plugin uses initial imgix parameters tuned for auto format and modest quality, but you can override these with with your own.
+    ex. `[ 'q' => 100 ]`
 - `useNativeTransforms` Craft Transforms: set to `true` to bypass imgix and use Craft Transforms instead.
 - `fallBackImageSrc` Fallback Image: Imgix has it's own default image that you can set for a source. Apart from that, if you wish to configure an image to display when an Asset is not provided to the picture function you can set that here.
 
