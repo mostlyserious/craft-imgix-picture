@@ -230,7 +230,7 @@ class ImgixTwigExtension extends AbstractExtension
      * Determine the max width and height based on an image's aspect ratio and a max px value..
      *
      * @param  Asset   $asset  An asset object
-     * @param  Integer $max_px The max length in pixels of the longest side
+     * @param  int $max_px The max length in pixels of the longest side
      * @return array   The max dimensions
      */
     public function calculateMaxDimensions(Asset $asset, int $max_px = 1200): array
@@ -378,6 +378,14 @@ class ImgixTwigExtension extends AbstractExtension
             return [
                 'width' => $new_width,
                 'height' => $new_height,
+            ];
+        }
+
+        /** Don't upsize original */
+        if ($new_width > $original_width || $new_height > $original_height) {
+            return [
+                'width' => $original_width,
+                'height' => $original_height,
             ];
         }
 
