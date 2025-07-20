@@ -157,3 +157,9 @@ This function is called with 3 arguments:
 - `downloadUrl()` creates a force download link to an imgix asset with the [dl](https://docs.imgix.com/apis/rendering/format/download) param
 - `imgixAttrs` returns the imgix attributes without a picture tag
 - `getMaxDimensions` returns the max dimensions of an asset within the defined parameters
+
+## Future Improvements (no timeline yet)
+- [] Ensure that a `media` attribute is not output if the result is a single `img` tag
+- [] Add support for use as a twig filter `|picture()`
+- [] Add support for manual media queries
+- [] Provide examples of how to use with the Element API
